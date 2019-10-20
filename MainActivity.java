@@ -1,15 +1,18 @@
 package net.kaufmanndesigns.view;
 
-import android.support.v4.app.FragmentStatePagerAdapter;
+import android.content.Context;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ChangeTVStationFragment.SendMessage {
 
     public static final String TAG = "MainActivity";
     private ViewPager viewPager;
+    public static Context sContext;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -18,27 +21,45 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate: Started");
         viewPager = findViewById(R.id.view_pager);
         setupViewPager(viewPager);
+
+        sContext = getApplicationContext();
+
     }
 
-    private void setupViewPager (ViewPager viewPager){
-        FragmentStatePagerAdapter adapter =
+    private void setupViewPager(ViewPager viewPager) {
+        FragmentStatePageAdapter adapter =
                 new FragmentStatePageAdapter(getSupportFragmentManager());
 
-        ((FragmentStatePageAdapter) adapter).addFragment(new LayoutFragment(),
+        adapter.addFragment(new LayoutFragment(),
                 "LayoutFragment");
-        ((FragmentStatePageAdapter) adapter).addFragment(new ChangeTVStationFragment(),
+
+        getSupportFragmentManager().beginTransaction().add(new LayoutFragment(), "LayoutTag").commit();
+
+        adapter.addFragment(new ChangeTVStationFragment(),
                 "ChangeTVStationFragment");
 
-        ((FragmentStatePageAdapter) adapter).addFragment(new ViewLayoutEditorFragment(),
+        adapter.addFragment(new ViewLayoutEditorFragment(),
                 "ViewLayoutEditorFragment");
 
-        ((FragmentStatePageAdapter) adapter).addFragment(new MusicChannelFragment(),
-                "MusicChannelFragment" );
+        adapter.addFragment(new MusicChannelFragment(),
+                "MusicChannelFragment");
 
         viewPager.setAdapter(adapter);
     }
 
-    public void setViewPager(int fragmentNumber){
+    public void setViewPager(int fragmentNumber) {
         viewPager.setCurrentItem(fragmentNumber);
     }
+
+
+    public static Context getContext() {
+        return sContext;
+    }
+
+    public void sendData(String channel, String url){
+        LayoutFragment layoutFragment = (LayoutFragment) getSupportFragmentManager().findFragmentByTag("LayoutTag");
+        assert layoutFragment != null;
+        layoutFragment.setNewsURL(channel, url);
+    }
+
 }
