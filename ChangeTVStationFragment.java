@@ -27,6 +27,7 @@ public class ChangeTVStationFragment extends Fragment {
 
         CardView channeltv2 = view.findViewById(R.id.channel_tv2);
         CardView channel_information = view.findViewById(R.id.channel_information);
+        CardView channel_borsen = view.findViewById(R.id.channel_borsen);
 
         channeltv2.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -44,6 +45,13 @@ public class ChangeTVStationFragment extends Fragment {
             }
         });
 
+        channel_borsen.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                sendMessage.sendData("Børsen nyheder", "https://borsen.dk/rss/");
+                ((MainActivity)getActivity()).setViewPager(0);
+            }
+        });
         return view;
     }
 

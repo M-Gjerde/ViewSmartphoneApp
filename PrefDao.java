@@ -26,4 +26,7 @@ public interface PrefDao {
 
     @Query("SELECT * FROM Preferences_table ORDER BY id DESC")
     LiveData<List<Preferences>> getAllPreferences();
+
+
+
 }

@@ -7,10 +7,12 @@ import android.arch.persistence.room.RoomDatabase;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.util.Log;
 
 @Database(entities = Preferences.class, version = 2, exportSchema = false)
 public abstract class PreferencesDatabase extends RoomDatabase {
 
+    private static final String TAG = "PreferencesDatabase";
     public static PreferencesDatabase instance;
 
     public abstract PrefDao prefDao();
@@ -31,6 +33,7 @@ public abstract class PreferencesDatabase extends RoomDatabase {
         public void onCreate(@NonNull SupportSQLiteDatabase db) {
             super.onCreate(db);
             new PopulateDBAsyncTask(instance).execute();
+            Log.d(TAG, "onCreate: " + "PreferencesParams");
         }
     };
 
@@ -43,7 +46,7 @@ public abstract class PreferencesDatabase extends RoomDatabase {
 
         @Override
         protected Void doInBackground(Void... voids) {
-            prefDao.insert(new Preferences("KaufmannDesigns1", "https://app.kaufmanndesigns.net/db/noInternet"));
+            //prefDao.insert(new Preferences("KaufmannDesigns1", "https://app.kaufmanndesigns.net/db/noInternet"));
             return null;
         }
     }
