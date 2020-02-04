@@ -31,4 +31,9 @@ public class FragmentStatePageAdapter extends FragmentStatePagerAdapter {
     public int getCount() {
         return mFragmentTitleList.size();
     }
+
+    public List<String> getmFragmentTitleList() {
+        return mFragmentTitleList;
+    }
 }
+

@@ -32,7 +32,7 @@ public class PreferencesParams {
     }
 
     public HashMap<String, String> getParams(){
-        params.put("username", preferences.getUsername());
+        params.put("mirror_id", preferences.getUsername());
         params.put("news_url", preferences.getUrl());
         params.put("power_mode", preferences.getPowerMode());
         params.put("spotify_playback", preferences.getPlaybackStatus());

@@ -18,6 +18,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,7 @@ class Repository {
     private static final String TAG = "Repository";
     private RequestQueue requestQueue;
     private PrefDao prefDao;
-    private LiveData<List<Preferences>> preferences;
+    public LiveData<List<Preferences>> preferences;
 
     Repository(Application application) {
         requestQueue = new RequestQueue(application.getApplicationContext());
@@ -50,15 +51,13 @@ class Repository {
         new DeleteAllPreferencesAsyncTask(prefDao).execute();
     }
 
-    LiveData<List<Preferences>> getPreferences() {
-        return preferences;
-    }
 
     void getResultFromFeed(String url, NameViewModel nameViewModel) {
         new getRSSFeedAsyncTask(requestQueue, nameViewModel).execute(url);
     }
 
     void insertSettingsToServer(String url, Map<String, String> params) {
+        Log.d(TAG, "insertSettingsToServer: ");
         new insertPreferencesToServerAsyncTask(requestQueue, params).execute(url);
     }
 
@@ -70,6 +69,89 @@ class Repository {
     void getJsonRequest(HashMap<String, String> params, NameViewModel nameViewModel) {
         String url = "https://app.kaufmanndesigns.net/db/view_app/getPreferences.php";
         new getJsonRequestAsyncTask(requestQueue, params, nameViewModel).execute(url);
+    }
+
+    void sendGoogleSetupRequest(String url, String service_provider, String mirror_id, String request) {
+        new sendSetupRequestAsyncTask(requestQueue, service_provider, mirror_id, request).execute(url);
+    }
+
+    void getOutlookSetupURL(String url, String mirror_id, String request, NameViewModel nameViewModel) {
+        new getOutlookSetupURLAsyncTask(requestQueue, mirror_id, request, nameViewModel).execute(url);
+    }
+
+    LiveData<List<Preferences>> getPreferences() {
+        return preferences;
+    }
+
+    private static class getOutlookSetupURLAsyncTask extends AsyncTask<String, Void, Void> {
+        RequestQueue requestQueue;
+        String mirror_id;
+        String request;
+        NameViewModel nameViewModel;
+
+        getOutlookSetupURLAsyncTask(RequestQueue requestQueue, String mirror_id, String request, NameViewModel nameViewModel) {
+            this.requestQueue = requestQueue;
+            this.mirror_id = mirror_id;
+            this.request = request;
+            this.nameViewModel = nameViewModel;
+
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, strings[0],
+
+                    response -> nameViewModel.getOutlookSetupURL().postValue(response),
+                    error -> Log.d(TAG, "onErrorResponse: getOutlookURL " + error)) {
+
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    params.put("mirror_id", mirror_id);
+                    params.put("request", request);
+
+                    return params;
+                }
+            };
+            requestQueue.addToRequestQueue(stringRequest);
+            return null;
+        }
+    }
+
+    private static class sendSetupRequestAsyncTask extends AsyncTask<String, Void, Void> {
+        RequestQueue requestQueue;
+        String service_provider;
+        String mirror_id;
+        String request;
+
+        sendSetupRequestAsyncTask(RequestQueue requestQueue, String service_provider, String mirror_id, String request) {
+            this.requestQueue = requestQueue;
+            this.service_provider = service_provider;
+            this.mirror_id = mirror_id;
+            this.request = request;
+        }
+
+        @Override
+        protected Void doInBackground(String... strings) {
+
+            StringRequest stringRequest = new StringRequest(Request.Method.POST, strings[0],
+
+                    response -> Log.d(TAG, "doInBackground: send setup request " + response),
+                    error -> Log.d(TAG, "onErrorResponse: send setup request " + error)) {
+
+                @Override
+                protected Map<String, String> getParams() {
+                    Map<String, String> params = new HashMap<>();
+                    Log.d(TAG, "getParams: " + service_provider);
+                    params.put("service_provider", service_provider);
+                    params.put("mirror_id", mirror_id);
+                    params.put("request", request);
+                    return params;
+                }
+            };
+            requestQueue.addToRequestQueue(stringRequest);
+            return null;
+        }
     }
 
     private static class getJsonRequestAsyncTask extends AsyncTask<String, Void, Void> {
@@ -101,7 +183,7 @@ class Repository {
             }, new Response.ErrorListener() {
                 @Override
                 public void onErrorResponse(VolleyError error) {
-                    Log.d(TAG, "onErrorResponse: " + error.getMessage());
+                    Log.d(TAG, "onErrorResponse: getJson " + error.getMessage());
                 }
 
             });
@@ -124,19 +206,13 @@ class Repository {
         @Override
         protected Void doInBackground(String... strings) {
             StringRequest request = new StringRequest(Request.Method.POST, strings[0],
-                    new Response.Listener<String>() {
-                        @Override
-                        public void onResponse(String response) {
-                            Log.d(TAG, "onResponse: " + response);
-                        }
-                    }, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.d(TAG, "onErrorResponse Insert: " + error.getMessage());
-                }
-            }) {
+                    response -> Log.d(TAG, "onResponse: insert " + response),
+
+                    error -> Log.d(TAG, "onErrorResponse Insert: " + error.getMessage() + " " + error)) {
+
                 @Override
                 protected Map<String, String> getParams() {
+                    Log.d(TAG, "getParams: " + params);
                     return params;
                 }
             };

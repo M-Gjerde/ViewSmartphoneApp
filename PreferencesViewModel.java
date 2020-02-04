@@ -25,6 +25,15 @@ public class PreferencesViewModel extends AndroidViewModel {
         allPreferences = repository.getPreferences();
     }
 
+    void sendSetupRequest(String url, String service_provider, String mirror_id, String request){
+        repository.sendGoogleSetupRequest(url, service_provider, mirror_id, request);
+    }
+
+    void getOutlookSetupURL(String url, String mirror_id, String request, NameViewModel nameViewModel){
+        Log.d(TAG, "getOutlookSetupURL: ");
+         repository.getOutlookSetupURL(url, mirror_id, request, nameViewModel);
+    }
+
     void sendLoginRequest(String username, String password, NameViewModel nameViewModel){
         repository.sendLoginRequest(username, password, nameViewModel);
     }

@@ -37,8 +37,6 @@ public class LoginFragment extends Fragment {
 
     SharedPreferences.Editor prefEditor;
     NameViewModel nameViewModel;
-    sendLatestPreferencesToUI sendLatestPreferencesToUI;
-
     Observer<JSONObject> nameObserver;
 
     @Nullable
@@ -86,7 +84,6 @@ public class LoginFragment extends Fragment {
                     Log.d(TAG, "onChanged: " + prefEditor);
                     prefEditor.putBoolean(Constants.KEY_LOGGED_IN, true);
                     prefEditor.apply();
-                    updateUIFromLatestPreferences();
                     ((MainActivity) Objects.requireNonNull(getActivity())).setViewPager(0);
                 } else {
                     Toast.makeText(getActivity(), "Fejl med log in " + newName, Toast.LENGTH_LONG).show();
@@ -98,37 +95,6 @@ public class LoginFragment extends Fragment {
         return view;
     }
 
-    void updateUIFromLatestPreferences() {
-        Observer<JSONObject> nameObserver = new Observer<JSONObject>() {
-            @Override
-            public void onChanged(@Nullable JSONObject jsonObject) {
-                Log.d(TAG, "onChanged: " + jsonObject.toString());
-                sendLatestPreferencesToUI.sendLatestPreferences(jsonObject);
-            }
-        };
-
-        nameViewModel.getJSONResponse().observe(this, nameObserver);
-    }
-
-    void removeLoginObserver() {
-        //nameViewModel.getJSONResponse().removeObserver();
-    }
-
-    interface sendLatestPreferencesToUI {
-        void sendLatestPreferences(JSONObject jsonObject);
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        try {
-            sendLatestPreferencesToUI = (LoginFragment.sendLatestPreferencesToUI) getActivity();
-        } catch (ClassCastException e) {
-            Log.d(TAG, "onAttach: " + e);
-            throw new ClassCastException(e.toString());
-        }
-    }
 
 
 }

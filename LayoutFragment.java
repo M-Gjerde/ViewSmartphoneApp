@@ -4,8 +4,11 @@ package net.kaufmanndesigns.view;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.Browser;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -14,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import net.kaufmanndesigns.view.utils.Constants;
@@ -21,18 +25,25 @@ import net.kaufmanndesigns.view.utils.Constants;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class LayoutFragment extends Fragment {
     private static final String TAG = "LayoutFragment";
     private TextView news_headline;
     private TextView news_title;
-    private CardView musicCard;
+    private TextView financeText;
+    private TextView playbackText;
+    private TextView calendarText;
+    private TextView albumText;
+    private TextView bottomTextView;
+    private RelativeLayout loadingPanel;
 
     public NameViewModel nameViewModel;
     private PreferencesViewModel preferencesViewModel;
@@ -48,15 +59,14 @@ public class LayoutFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.layout_fragment, container, false);
 
-        CardView mTVcard = view.findViewById(R.id.tv_stream_card);
         news_headline = view.findViewById(R.id.news_text);
         CardView bottomCard = view.findViewById(R.id.screen_saver);
-        TextView bottomTextView = view.findViewById(R.id.screen_saver_text);
-        CardView financeCard = view.findViewById(R.id.finance_card);
-        TextView financeText = view.findViewById(R.id.finance_text);
-        TextView playbackText = view.findViewById(R.id.playback_text);
-        TextView calendarText = view.findViewById(R.id.calendar_text);
-        TextView albumText = view.findViewById(R.id.album_text);
+        bottomTextView = view.findViewById(R.id.screen_saver_text);
+        financeText = view.findViewById(R.id.finance_text);
+        playbackText = view.findViewById(R.id.playback_text);
+        calendarText = view.findViewById(R.id.calendar_text);
+        albumText = view.findViewById(R.id.album_text);
+        loadingPanel = view.findViewById(R.id.loadingPanel);
 
         news_title = view.findViewById(R.id.news_title);
 
@@ -73,117 +83,74 @@ public class LayoutFragment extends Fragment {
 
         Log.d(TAG, "onCreateView: " + pref);
 
-        news_headline.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity) getActivity()).setViewPager(1);
-            }
+        news_headline.setOnClickListener(v ->
+                ((MainActivity) getActivity()).setViewPager(1));
+
+        news_title.setOnClickListener(view1 -> ((MainActivity) getActivity()).setViewPager(1));
+
+
+        financeText.setOnClickListener(view12 -> {
+            pref.setFinanceStatus(toggleBottomCard(financeText));
+            preferencesViewModel.update(pref);
+        });
+        playbackText.setOnClickListener(view13 -> {
+            pref.setPlaybackStatus(toggleBottomCard(playbackText));
+            preferencesViewModel.update(pref);
         });
 
-        news_title.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                ((MainActivity) getActivity()).setViewPager(1);
+        AtomicBoolean longClick = new AtomicBoolean(false); //TODO Make this more readable
+        calendarText.setOnClickListener(view14 -> {
+            if (!longClick.get()) {
+                pref.setCalendarStatus(toggleBottomCard(calendarText));
+                preferencesViewModel.update(pref);
             }
+            longClick.set(false);
         });
 
-        final boolean[] financeState = {false};
-        financeText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (financeState[0]) {
-                    financeText.setBackgroundResource(R.drawable.transparent_underline);
-                    pref.setFinanceStatus("off");
-                    financeState[0] = false;
-                } else {
-                    financeText.setBackgroundResource(R.drawable.green_underline);
-                    pref.setFinanceStatus("on");
-                    financeState[0] = true;
-                }
-            }
+        calendarText.setOnLongClickListener(view15 -> {
+            layoutFragmentInterface.addCalendarSetupFragment();
+            longClick.set(true);
+            return false;
         });
-        final boolean[] playbackState = {false};
-        playbackText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (playbackState[0]) {
-                    playbackText.setBackgroundResource(R.drawable.transparent_underline);
-                    pref.setPlaybackStatus("off");
-                    playbackState[0] = false;
-                } else {
-                    playbackText.setBackgroundResource(R.drawable.green_underline);
-                    pref.setPlaybackStatus("on");
-                    playbackState[0] = true;
-                }
-                preferencesViewModel.update(pref);
-            }
-        });
-        final boolean[] calendarState = {false};
-        calendarText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (calendarState[0]) {
-                    calendarText.setBackgroundResource(R.drawable.transparent_underline);
-                    pref.setCalendarStatus("off");
-                    calendarState[0] = false;
-                } else {
-                    calendarText.setBackgroundResource(R.drawable.green_underline);
-                    pref.setCalendarStatus("on");
-                    calendarState[0] = true;
-                }
-                preferencesViewModel.update(pref);
-            }
-        });
-        final boolean[] albumState = {false};
-        albumText.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (albumState[0]) {
-                    albumText.setBackgroundResource(R.drawable.transparent_underline);
-                    pref.setSlideshow("off");
-                    albumState[0] = false;
-                } else {
-                    albumText.setBackgroundResource(R.drawable.green_underline);
-                    pref.setSlideshow("on");
-                    albumState[0] = true;
-                }
-                preferencesViewModel.update(pref);
-            }
-        });
-        //TODO Syncronise this method with actual state of mirror
-        final boolean[] standardState = {false};
-        bottomCard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-                if (standardState[0]) {
-                    bottomTextView.setBackgroundResource(R.drawable.transparent_underline);
-                    pref.setPowerMode("off");
-                    standardState[0] = false;
-                } else {
-                    bottomTextView.setBackgroundResource(R.drawable.green_underline);
-                    pref.setPowerMode("on");
-                    standardState[0] = true;
-                }
-                preferencesViewModel.update(pref);
+        albumText.setOnClickListener(view17 -> {
+            pref.setSlideshow(toggleBottomCard(albumText));
+            preferencesViewModel.update(pref);
+        });
 
-            }
+
+        bottomCard.setOnClickListener(view18 -> {
+            pref.setPowerMode(toggleBottomCard(bottomTextView));
+            preferencesViewModel.update(pref);
         });
 
 
         return view;
     }
 
+    private String toggleBottomCard(TextView textView) {
+        if (textView.getTag().toString().equals("transparent_underline")) {
+            textView.setBackgroundResource(R.drawable.green_underline);
+            textView.setTag(String.valueOf(R.drawable.green_underline));
+            return "on";
+        } else {
+            textView.setBackgroundResource(R.drawable.transparent_underline);
+            textView.setTag("transparent_underline");
+            return "off";
+        }
 
-    private void initializeAfterUpdate(String news_URL){
+    }
+
+
+    private void initializeAfterUpdate(String news_URL) {
         setRSSUpdater(news_URL);
         setNewsChannelTitle();
     }
 
     private void setNewsChannelTitle() {
         if (dbNotEmpty())
-        news_title.setText(Objects.requireNonNull(
-                preferencesViewModel.getAllPreferences().getValue()).get(0).getNewsChannel());
+            news_title.setText(Objects.requireNonNull(
+                    preferencesViewModel.getAllPreferences().getValue()).get(0).getNewsChannel());
     }
 
     //Functions for used in onCreate
@@ -216,19 +183,17 @@ public class LayoutFragment extends Fragment {
         preferencesViewModel.update(pref);
     }
 
+
     private void updatePreferences() {
         final Observer<List<Preferences>> preferencesObserver = preferences -> {
             if (dbNotEmpty()) {
                 try {
                     preferencesParams = new PreferencesParams(Objects.requireNonNull(preferences).get(0));
                     pref = preferences.get(0);
-                    Log.d(TAG, "onChanged: Preference ID: " + preferences.get(0).getId());
-                    Log.d(TAG, "onChanged: size(): " + preferences.size() );
-                    Log.d(TAG, "onChanged: " +preferencesParams.getParams().get("username"));
-                    Log.d(TAG, "onChanged: " + pref.getUsername());
-                    if(preferencesParams.getParams().get("username")  != null){
-                        preferencesViewModel.insertSettingsToServer("https://app.kaufmanndesigns.net/db/insert_preferences.php", preferencesParams.getParams());
-                        Log.d(TAG, "onChanged: " + preferencesParams.getParams());                        }
+                    if (pref.getUsername() != null) {
+                        preferencesViewModel.insertSettingsToServer("https://app.kaufmanndesigns.net/db/view_app/insert_preferences.php", preferencesParams.getParams());
+                        Log.d(TAG, "onChanged: " + preferencesParams.getParams());
+                    }
                     if (dbNotEmpty())
                         initializeAfterUpdate(preferences.get(0).getUrl()); //Update the news URL after local dataBase has been updated
                 } catch (JSONException e) {
@@ -240,28 +205,16 @@ public class LayoutFragment extends Fragment {
                         "", "", "");
                 preferencesViewModel.insert(pref);
             }
-            pref.setUsername(PreferenceManager.getDefaultSharedPreferences(getContext()).getString(Constants.KEY_MIRROR_ID,null));
+            pref.setUsername(PreferenceManager.getDefaultSharedPreferences(getContext()).getString(Constants.KEY_MIRROR_ID, null));
         };
         preferencesViewModel.getAllPreferences().observe(this, preferencesObserver);
     }
 
-    Boolean dbNotEmpty(){
+    Boolean dbNotEmpty() {
         return Objects.requireNonNull(preferencesViewModel.getAllPreferences().getValue()).size() > 0;
     }
 
-    void loadPreviousPreferencesFromLogin(JSONObject jsonObject){
-        //Load news URL and channel | Power mode | spotify | calendar | newschannel| finance| slideshow
-        Log.d(TAG, "loadPreviousPreferencesFromLogin: " + jsonObject.toString());
-        try {
-            setNewsURL(jsonObject.getString("news_channel"), jsonObject.getString("news_url"));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        layoutFragmentInterface.removeLoginObserver();
-    }
-
-    void loadPreviousPreferencesFromStartUp(){
+    void loadPreviousPreferencesFromStartUp() {
         HashMap<String, String> params = new HashMap<>();
         String username = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(Constants.KEY_MIRROR_ID, null);
         params.put("getPreferences", "true");
@@ -269,21 +222,87 @@ public class LayoutFragment extends Fragment {
         preferencesViewModel.sendJSONRequest(params, nameViewModel);
     }
 
-    void previousPreferencesObserver(){
+    void previousPreferencesObserver() {
         final Observer<JSONObject> nameObserver = new Observer<JSONObject>() {
             @Override
             public void onChanged(@Nullable JSONObject jsonObject) {
                 Log.d(TAG, "onChanged: previousObserver " + jsonObject.toString());
-                //SetPrevousPreferences
+                try {
+                    Log.d(TAG, "onChanged: " + jsonObject.get("power_mode"));
+                    if (jsonObject.get("power_mode").equals("on")) {
+                        pref.setPowerMode(toggleBottomCard(bottomTextView));
+                    }
+                    if (jsonObject.get("finance").equals("on")) {
+                        pref.setFinanceStatus(toggleBottomCard(financeText));
+                    }
+                    if (jsonObject.get("slideshow").equals("on")) {
+                        pref.setFinanceStatus(toggleBottomCard(albumText));
+                    }
+                    if (jsonObject.get("spotify_playback").equals("on")) {
+                        pref.setFinanceStatus(toggleBottomCard(playbackText));
+                    }
+                    if (jsonObject.get("calendar").equals("on")) {
+                        pref.setFinanceStatus(toggleBottomCard(calendarText));
+                    }
+
+                    setNewsURL(jsonObject.get("news_channel").toString(), jsonObject.get("news_url").toString());
+
+                    preferencesViewModel.update(pref);
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
             }
         };
         nameViewModel.getJSONResponse().observe(this, nameObserver);
     }
 
+    public void sendSetupData(String service_provider) {
 
-    interface GetViewModels{
+        String url = "https://app.kaufmanndesigns.net/db/view_app/request_setup_information.php";
+        String mirror_id = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(Constants.KEY_MIRROR_ID, null);
+        String request = "setup";
+        Log.d(TAG, "sendSetupData: " + service_provider);
+        preferencesViewModel.sendSetupRequest(url, service_provider, mirror_id, request);
+        if (service_provider.equals("outlook")) {
+
+            setOutlookSetupURLObserver();
+            loadingPanel.setVisibility(View.VISIBLE);
+            Timer myTimer = new Timer();
+            myTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    String request = "outlookSetupURL";
+                    preferencesViewModel.getOutlookSetupURL(url, mirror_id, request, nameViewModel);
+                }
+            }, 500);
+
+        }
+    }
+
+    public void openOutlookURLInChrome(String url) {
+        Log.d(TAG, "openOutlookURLInChrome: " + url);
+        url = URLDecoder.decode(url);
+        Uri uri = Uri.parse(url.trim());
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        intent.putExtra(Browser.EXTRA_APPLICATION_ID, Objects.requireNonNull(getContext()).getPackageName());
+        startActivity(intent);
+    }
+
+    public void setOutlookSetupURLObserver(){
+        final Observer<String> nameObserver = newName -> {
+            loadingPanel.setVisibility(View.GONE);
+            openOutlookURLInChrome(Objects.requireNonNull(newName));
+        };
+        nameViewModel.getOutlookSetupURL().observe(this, nameObserver);
+    }
+
+
+    interface GetViewModels {
         void getRepository();
-        void removeLoginObserver();
+
+        void addCalendarSetupFragment();
+
+        void removeCalendarSetupFragment();
     }
 
     @Override
@@ -292,6 +311,7 @@ public class LayoutFragment extends Fragment {
 
         try {
             layoutFragmentInterface = (LayoutFragment.GetViewModels) getActivity();
+
         } catch (ClassCastException e) {
             Log.d(TAG, "onAttach: " + e);
             throw new ClassCastException(e.toString());

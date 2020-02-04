@@ -10,12 +10,16 @@ import android.util.Log;
 
 import org.json.JSONObject;
 
+import java.util.List;
+
 public class NameViewModel extends AndroidViewModel {
     private static final String TAG = "NameViewModel";
-    // Create a LiveData with a String
+
     private MutableLiveData<String> currentName;
     private MutableLiveData<String> loginResponse;
     private MutableLiveData<JSONObject> JSONResponse;
+    private MutableLiveData<String> outlookSetupURL;
+
 
     public NameViewModel(@NonNull Application application) {
         super(application);
@@ -43,6 +47,11 @@ public class NameViewModel extends AndroidViewModel {
         if(JSONResponse == null)JSONResponse = new MutableLiveData<>();
         Log.d(TAG, "getLoginResponse: " + JSONResponse);
         return JSONResponse;
+    }
+    MutableLiveData<String> getOutlookSetupURL(){
+        if(outlookSetupURL == null)outlookSetupURL = new MutableLiveData<>();
+        Log.d(TAG, "getLoginResponse: " + outlookSetupURL);
+        return outlookSetupURL;
     }
 
 
